@@ -2,6 +2,8 @@ import os
 import hashlib
 import json
 import time
+import uuid
+import base64
 from datetime import datetime
 from binascii import hexlify
 from base64 import b64encode
@@ -32,10 +34,14 @@ class Client(object):
         self.limit_reset = None
 
     def get_wsse_header(self):
-        nonce = hexlify(os.urandom(16)).decode('utf-8')
-        created = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S+00:00')
-        sha1 = hashlib.sha1(str.encode(nonce + created + self.secret)).hexdigest()
-        password_digest = bytes.decode(b64encode(str.encode(sha1)))
+        nonce = uuid.uuid4().hex
+        created = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        raw_password_digest = nonce + created + self.secret
+        encrypted_password_digest = hashlib.sha1()
+        encrypted_password_digest.update(raw_password_digest.encode())
+        pass_sha1 = encrypted_password_digest.hexdigest()
+        
+        password_digest = base64.b64encode(pass_sha1.encode()).decode()
 
         return ('UsernameToken Username="{}", ' +
                 'PasswordDigest="{}", Nonce="{}", Created="{}"').format(
