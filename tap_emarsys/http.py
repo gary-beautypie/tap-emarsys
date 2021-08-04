@@ -78,6 +78,7 @@ class Client(object):
         #self.limit_reset = int(response.headers['X-Ratelimit-Reset'])
         
         print(response.headers)
+        print(response.content)
 
         if response.status_code in [429, 503]:
             raise RateLimitException()
