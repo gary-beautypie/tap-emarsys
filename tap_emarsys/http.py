@@ -73,7 +73,7 @@ class Client(object):
                 timer.tags[metrics.Tag.http_status_code] = response.status_code
         else:
             response = requests.request(method, self.url(path), **kwargs)
-
+        print(response.headers)
         self.calls_remaining = int(response.headers['X-Ratelimit-Remaining'])
         self.limit_reset = int(response.headers['X-Ratelimit-Reset'])
 
