@@ -30,7 +30,8 @@ def discover(ctx):
             if field_name in schemas.PK_FIELDS[tap_stream_id]:
                 inclusion = 'automatic'
             else:
-                inclusion = 'available'
+#                 inclusion = 'available'
+                inclusion = 'automatic'
             metadata.append({
                 'metadata': {
                     'inclusion': inclusion
