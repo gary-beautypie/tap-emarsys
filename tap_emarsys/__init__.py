@@ -26,6 +26,8 @@ def discover(ctx):
         metadata = []
         if tap_stream_id in schemas.ROOT_METADATA:
             metadata.append(schemas.ROOT_METADATA[tap_stream_id])
+        else:
+            metadata.append({"metadata": {"selected": True}, "breadcrumb": []})
         for field_name in schema.properties.keys():
             if field_name in schemas.PK_FIELDS[tap_stream_id]:
                 inclusion = 'automatic'
@@ -60,10 +62,11 @@ def sync(ctx):
     for tap_stream_id in schemas.STATIC_SCHEMA_STREAM_IDS:
         schemas.load_and_write_schema(tap_stream_id)
     contacts_schema, _ = schemas.get_contacts_schema(ctx)
-    singer.write_schema('contacts',
-                        contacts_schema.to_dict(),
-                        schemas.PK_FIELDS['contacts'])
-
+    singer.write_schema(
+        'contacts',
+        contacts_schema.to_dict(),
+        schemas.PK_FIELDS['contacts']
+    )
     streams.sync_selected_streams(ctx)
     ctx.write_state()
 
@@ -74,6 +77,9 @@ def main():
     if args.discover:
         catalog = discover(ctx)
         json.dump(catalog.to_dict(), sys.stdout)
+    elif args.catalog:
+        ctx.catalog = Catalog.from_dict(args.catalog)
+        sync(ctx)
     else:
         ctx.catalog = Catalog.from_dict(args.properties) \
             if args.properties else discover(ctx)
