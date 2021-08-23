@@ -19,7 +19,7 @@ def check_authorization(ctx):
     ctx.client.get('/settings')
 
 def discover(ctx):
-    check_authorization(ctx)
+    _ = check_authorization(ctx)
     catalog = Catalog([])
     for tap_stream_id in schemas.STATIC_SCHEMA_STREAM_IDS:
         schema = Schema.from_dict(schemas.load_schema(tap_stream_id))
