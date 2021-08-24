@@ -90,7 +90,7 @@ def get_contacts_schema(ctx):
     # sort so fields are processed in created order, more recent duplicates are appended with _{id}
     raw_fields = sorted(raw_fields, key=lambda x: x['id'])
     properties = {}
-    metadata = [{"metadata": {"selected": True}, "breadcrumb": []}]
+    metadata = []#[{"metadata": {"selected": True}, "breadcrumb": []}]
     for raw_field in raw_fields:
         field_id = raw_field['id']
         json_schema = get_contact_json_schema(raw_field['application_type'])
