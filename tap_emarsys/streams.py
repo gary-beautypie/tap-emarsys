@@ -219,7 +219,7 @@ def sync_contact_lists_memberships(ctx, contact_lists):
         contact_lists = contact_lists[:max_pages]
 
     for contact_list in contact_lists:
-        limit = 5000
+        limit = 1000000
         count = limit
         offset = 0
         while count == limit and \
