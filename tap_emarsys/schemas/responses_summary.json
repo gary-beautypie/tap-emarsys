@@ -1,0 +1,78 @@
+{
+  "type": ["object"],
+  "additionalProperties": false,
+  "properties": {
+    "start_date": {
+      "type": [
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "end_date": {
+      "type": [
+        "string"
+      ],
+      "format": "date-time"
+    },
+    "campaign_id": {
+      "type": [
+        "string"
+      ]
+    },
+    "sent": {
+      "type": [
+        "integer"
+      ]
+    },
+    "planned": {
+      "type": [
+        "integer"
+      ]
+    },
+    "soft_bounces": {
+      "type": [
+        "integer"
+      ]
+    },
+    "hard_bounces": {
+      "type": [
+        "integer"
+      ]
+    },
+    "block_bounces": {
+      "type": [
+        "integer"
+      ]
+    },
+    "opened": {
+      "type": [
+        "integer"
+      ]
+    },
+    "unsubscribe": {
+      "type": [
+        "integer"
+      ]
+    },
+    "total_clicks": {
+      "type": [
+        "integer"
+      ]
+    },
+    "unique_clicks": {
+      "type": [
+        "integer"
+      ]
+    },
+    "complained": {
+      "type": [
+        "integer"
+      ]
+    },
+    "launches": {
+      "type": [
+        "integer"
+      ]
+    }
+  }
+}

@@ -43,15 +43,19 @@ def get_date_and_integer_fields(stream):
 
 def base_transform(date_fields, integer_fields, obj):
     new_obj = {}
-    for field, value in obj.items():
-        if value == '':
-            value = None
-        elif field in integer_fields and value is not None:
-            value = int(value)
-        elif field in date_fields and value is not None:
-            value = pendulum.parse(value).isoformat()
-        new_obj[field] = value
-    return new_obj
+    try:
+        for field, value in obj.items():
+            if value == '':
+                value = None
+            elif field in integer_fields and value is not None:
+                value = int(value)
+            elif field in date_fields and value is not None:
+                value = pendulum.parse(value).isoformat()
+            new_obj[field] = value
+        return new_obj
+    except:
+        print(obj, type(obj))
+        raise
 
 def select_fields(mdata, obj):
     new_obj = {}
@@ -253,6 +257,55 @@ def sync_email_launches(ctx, sync, campaigns):
     return data_transformed
 
 
+def sync_response_summaries(ctx, sync, campaigns):
+    campaign_ids = (
+        list(map(lambda x: x['id'],
+                 filter(lambda x: x['status'] in ("3", "-3", "2"),
+                        campaigns)))
+    )
+    bookmark = ctx.state.get('bookmarks', {}).get('responses_summary', {})
+    start_date = pendulum.parse(ctx.config.get('start_date', 'now'))
+    end_date = pendulum.parse(ctx.config.get('end_date', 'now'))
+
+    start_date = bookmark.get('last_metric_date', start_date)
+
+    current_date = start_date
+
+    while current_date <= end_date:
+        next_date = current_date.add(days=1)
+        data_for_date = []
+        for campaign_id in campaign_ids:
+            data = ctx.client.post(
+                '/email/{emailId}/responsesummary'.format(emailId=campaign_id),
+                {
+                    'start_date': current_date.to_date_string(),
+                    'end_date': next_date.to_date_string()
+                },
+                endpoint='responses_summary'
+            )
+            data['campaign_id'] = campaign_id
+            data['start_date'] = start_date.to_date_string()
+            data['end_date'] = next_date.to_date_string()
+            # stream = ctx.catalog.get_stream('responses_summary')
+            # date_fields, integer_fields = get_date_and_integer_fields(stream)
+            # try:
+            #     data_transformed = list(map(partial(base_transform, date_fields, integer_fields), data))
+            # except:
+            #     print(data)
+            #     raise
+            #
+            data_for_date.append(data)
+            if sync:
+            #     mdata = metadata.to_map(stream.metadata)
+            #     data_selected = list(map(partial(select_fields, mdata), data_transformed))
+                write_records('responses_summary', data_for_date)
+        current_date = next_date
+
+    reset_stream(ctx.state, 'responses_summary')
+    write_bookmark(ctx.state, 'responses_summary', 'last_metric_date', end_date.to_date_string())
+    ctx.write_state()
+
+
 @on_exception(constant, MetricsRateLimitException, max_tries=5, interval=60)
 @on_exception(expo, RateLimitException, max_tries=5)
 @sleep_and_retry
@@ -420,9 +473,14 @@ def sync_selected_streams(ctx):
         ctx.state['last_synced_stream'] = IDS.METRICS
         ctx.write_state()
 
-    if IDS.EMAIL_LAUNCHES in selected_streams and last_synced_stream != IDS.EMAIL_LAUNCHES:
-        sync_email_launches(ctx, IDS.EMAIL_LAUNCHES in selected_streams, campaigns)
-        ctx.state['last_synced_stream'] = IDS.EMAIL_LAUNCHES
+    # if IDS.EMAIL_LAUNCHES in selected_streams and last_synced_stream != IDS.EMAIL_LAUNCHES:
+    #     sync_email_launches(ctx, IDS.EMAIL_LAUNCHES in selected_streams, campaigns)
+    #     ctx.state['last_synced_stream'] = IDS.EMAIL_LAUNCHES
+    #     ctx.write_state()
+
+    if IDS.RESPONSES_SUMMARY in selected_streams and last_synced_stream != IDS.RESPONSES_SUMMARY:
+        sync_response_summaries(ctx, IDS.RESPONSES_SUMMARY in selected_streams, campaigns)
+        ctx.state['last_synced_stream'] = IDS.RESPONSES_SUMMARY
         ctx.write_state()
 
     ctx.state['last_synced_stream'] = None
