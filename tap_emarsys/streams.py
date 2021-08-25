@@ -286,15 +286,15 @@ def sync_response_summaries(ctx, sync, campaigns):
             data['campaign_id'] = campaign_id
             data['start_date'] = start_date.to_date_string()
             data['end_date'] = next_date.to_date_string()
-            # stream = ctx.catalog.get_stream('responses_summary')
-            # date_fields, integer_fields = get_date_and_integer_fields(stream)
+            stream = ctx.catalog.get_stream('responses_summary')
+            date_fields, integer_fields = get_date_and_integer_fields(stream)
             # try:
-            #     data_transformed = list(map(partial(base_transform, date_fields, integer_fields), data))
+            data_transformed = base_transform(date_fields, integer_fields, data)
             # except:
             #     print(data)
             #     raise
             #
-            data_for_date.append(data)
+            data_for_date.append(data_transformed)
             if sync:
             #     mdata = metadata.to_map(stream.metadata)
             #     data_selected = list(map(partial(select_fields, mdata), data_transformed))
