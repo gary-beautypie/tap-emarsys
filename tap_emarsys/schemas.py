@@ -11,12 +11,14 @@ class IDS(object): # pylint: disable=too-few-public-methods
     CONTACT_LISTS = 'contact_lists'
     CONTACT_LIST_MEMBERSHIPS = 'contact_list_memberships'
     METRICS = 'metrics'
+    EMAIL_LAUNCHES = 'email_launches'
 
 STATIC_SCHEMA_STREAM_IDS = [
     IDS.CAMPAIGNS,
     IDS.CONTACT_LISTS,
     IDS.CONTACT_LIST_MEMBERSHIPS,
-    IDS.METRICS
+    IDS.METRICS,
+    IDS.EMAIL_LAUNCHES
 ]
 
 PK_FIELDS = {
@@ -24,7 +26,8 @@ PK_FIELDS = {
     IDS.CONTACTS: ['id'],
     IDS.CONTACT_LISTS: ['id'],
     IDS.CONTACT_LIST_MEMBERSHIPS: ['contact_list_id', 'contact_id'],
-    IDS.METRICS: ['date', 'metric', 'contact_id', 'campaign_id']
+    IDS.METRICS: ['date', 'metric', 'contact_id', 'campaign_id'],
+    IDS.EMAIL_LAUNCHES: ['id']
 }
 
 METRICS_AVAILABLE = [
@@ -43,7 +46,7 @@ ROOT_METADATA = {
     IDS.METRICS: {
         'metadata': {
             'tap-emarsys.metrics-available': METRICS_AVAILABLE,
-            'selected': True
+            'selected': False
         },
         'breadcrumb': []
     }

@@ -227,33 +227,61 @@ def sync_contact_lists_memberships(ctx, contact_lists):
             count = sync_contact_list_memberships(ctx, contact_list['id'], limit, offset)
             offset += limit
 
+
+def sync_email_launches(ctx, sync, campaigns):
+    campaign_ids = (
+        list(map(lambda x: x['id'],
+                 filter(lambda x: x['status'] in ("3", "-3", "2"),
+                        campaigns)))
+    )
+    data_transformed = []
+    for campaign_id in campaign_ids:
+        data = ctx.client.post(
+            '/email/getlaunchesofemail',
+            {
+                'emailId': campaign_id
+            },
+            endpoint='email_launches'
+        )
+        stream = ctx.catalog.get_stream('email_launches')
+        date_fields, integer_fields = get_date_and_integer_fields(stream)
+        data_transformed += list(map(partial(base_transform, date_fields, integer_fields), data))
+        if sync:
+            mdata = metadata.to_map(stream.metadata)
+            data_selected = list(map(partial(select_fields, mdata), data_transformed))
+            write_records('email_launches', data_selected)
+    return data_transformed
+
+
 @on_exception(constant, MetricsRateLimitException, max_tries=5, interval=60)
 @on_exception(expo, RateLimitException, max_tries=5)
 @sleep_and_retry
 @limits(calls=1, period=61) # 60 seconds needed to be padded by 1 second to work
-def post_metric(ctx, metric, start_date, end_date, campaign_id):
-    LOGGER.info('Metrics query - metric: {} start_date: {} end_date: {} campaign_id: {}'.format(
+def post_metric(ctx, metric, start_date, end_date):
+    LOGGER.info('Metrics query - metric: {} start_date: {} end_date: {} campaign_id:'.format(
         metric,
         start_date,
         end_date,
-        campaign_id))
+        # campaign_id
+    ))
     return ctx.client.post(
         '/email/responses',
         {
             'type': metric,
             'start_date': start_date,
             'end_date': end_date,
-            'campaign_id': campaign_id
+            # 'campaign_id': campaign_id
         },
         endpoint='metrics_job')
 
-def sync_metric(ctx, campaign_id, metric, start_date, end_date):
+def sync_metric(ctx, metric, start_date, end_date):
     with singer.metrics.job_timer('daily_aggregated_metric'):
         job = post_metric(ctx,
                           metric,
                           start_date.to_date_string(),
-                          end_date.to_date_string(),
-                          campaign_id)
+                          end_date.to_date_string()
+                          # campaign_id
+        )
 
         LOGGER.info('Metrics query job - {}'.format(job['id']))
 
@@ -279,18 +307,17 @@ def sync_metric(ctx, campaign_id, metric, start_date, end_date):
             'date': metric_date,
             'metric': metric,
             'contact_id': contact_id,
-            'campaign_id': campaign_id
+            # 'campaign_id': campaign_id
         })
-
     write_records('metrics', data_rows)
 
-def write_metrics_state(ctx, campaigns_to_resume, metrics_to_resume, date_to_resume):
-    write_bookmark(ctx.state, 'metrics', 'campaigns_to_resume', campaigns_to_resume)
+def write_metrics_state(ctx, metrics_to_resume, date_to_resume):
+    # write_bookmark(ctx.state, 'metrics', 'campaigns_to_resume', campaigns_to_resume)
     write_bookmark(ctx.state, 'metrics', 'metrics_to_resume', metrics_to_resume)
     write_bookmark(ctx.state, 'metrics', 'date_to_resume', date_to_resume.to_date_string())
     ctx.write_state()
 
-def sync_metrics(ctx, campaigns):
+def sync_metrics(ctx):#, campaigns):
     max_pages = ctx.config.get('max_pages')
     if max_pages:
         max_pages = int(max_pages)
@@ -312,19 +339,19 @@ def sync_metrics(ctx, campaigns):
 
     start_date = bookmark.get('last_metric_date', start_date)
 
-    campaigns_to_resume = bookmark.get('campaigns_to_resume')
-    if campaigns_to_resume:
-        campaign_ids = campaigns_to_resume
-        last_metrics = bookmark.get('metrics_to_resume')
-        last_date = bookmark.get('date_to_resume')
-        if last_date:
-            last_date = pendulum.parse(last_date)
+    # campaigns_to_resume = bookmark.get('campaigns_to_resume')
+    # if campaigns_to_resume:
+    #     campaign_ids = campaigns_to_resume
+    last_metrics = bookmark.get('metrics_to_resume')
+    last_date = bookmark.get('date_to_resume')
+    if last_date:
+        last_date = pendulum.parse(last_date)
     else:
-        campaign_ids = (
-            list(map(lambda x: x['id'],
-                     filter(lambda x: x['deleted'] is None,
-                            campaigns)))
-        )
+        # campaign_ids = (
+        #     list(map(lambda x: x['id'],
+        #              filter(lambda x: x['deleted'] is None,
+        #                     campaigns)))
+        # )
         metrics_to_resume = metrics_selected
         last_date = None
         last_metrics = None
@@ -337,20 +364,20 @@ def sync_metrics(ctx, campaigns):
 
     while current_date <= end_date:
         next_date = current_date.add(days=1)
-        campaigns_to_resume = campaign_ids.copy()
-        for campaign_id in campaign_ids:
-            campaign_metrics = last_metrics or metrics_selected
-            last_metrics = None
-            metrics_to_resume = campaign_metrics.copy()
-            for metric in campaign_metrics:
-                sync_metric(ctx,
-                            campaign_id,
-                            metric,
-                            current_date,
-                            next_date)
-                write_metrics_state(ctx, campaigns_to_resume, metrics_to_resume, current_date)
-                metrics_to_resume.remove(metric)
-            campaigns_to_resume.remove(campaign_id)
+        # campaigns_to_resume = campaign_ids.copy()
+        # for campaign_id in campaign_ids:
+        campaign_metrics = last_metrics or metrics_selected
+        last_metrics = None
+        metrics_to_resume = campaign_metrics.copy()
+        for metric in campaign_metrics:
+            sync_metric(ctx,
+                        # campaign_id,
+                        metric,
+                        current_date,
+                        next_date)
+            write_metrics_state(ctx, metrics_to_resume, current_date)
+            metrics_to_resume.remove(metric)
+            # campaigns_to_resume.remove(campaign_id)
         current_date = next_date
 
     reset_stream(ctx.state, 'metrics')
@@ -389,8 +416,13 @@ def sync_selected_streams(ctx):
         ctx.write_state()
 
     if IDS.METRICS in selected_streams and last_synced_stream != IDS.METRICS:
-        sync_metrics(ctx, campaigns)
+        sync_metrics(ctx)
         ctx.state['last_synced_stream'] = IDS.METRICS
+        ctx.write_state()
+
+    if IDS.EMAIL_LAUNCHES in selected_streams and last_synced_stream != IDS.EMAIL_LAUNCHES:
+        sync_email_launches(ctx, IDS.EMAIL_LAUNCHES in selected_streams, campaigns)
+        ctx.state['last_synced_stream'] = IDS.EMAIL_LAUNCHES
         ctx.write_state()
 
     ctx.state['last_synced_stream'] = None
