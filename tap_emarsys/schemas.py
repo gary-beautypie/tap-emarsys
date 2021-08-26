@@ -53,7 +53,7 @@ ROOT_METADATA = {
     IDS.METRICS: {
         'metadata': {
             'tap-emarsys.metrics-available': METRICS_AVAILABLE,
-            'selected': False
+            'selected': True
         },
         'breadcrumb': []
     }
