@@ -14,31 +14,37 @@
     },
     "type": {
       "type": [
+        "null",
         "string"
       ]
     },
     "tags": {
       "type": [
+        "null",
         "array"
       ],
       "items": {
         "type": [
+          "null",
           "string"
         ]
       }
     },
     "criteria_types": {
       "type": [
+        "null",
         "array"
       ],
       "items": {
         "type": [
+          "null",
           "string"
         ]
       }
     },
     "predefined_segment_id": {
       "type": [
+        "null",
         "integer"
       ]
     }
