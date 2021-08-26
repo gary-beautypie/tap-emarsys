@@ -492,10 +492,10 @@ def sync_selected_streams(ctx):
     #     ctx.state['last_synced_stream'] = IDS.EMAIL_LAUNCHES
     #     ctx.write_state()
 
-    # if IDS.RESPONSES_SUMMARY in selected_streams and last_synced_stream != IDS.RESPONSES_SUMMARY:
-    #     sync_response_summaries(ctx, IDS.RESPONSES_SUMMARY in selected_streams, campaigns)
-    #     ctx.state['last_synced_stream'] = IDS.RESPONSES_SUMMARY
-    #     ctx.write_state()
+    if IDS.RESPONSES_SUMMARY in selected_streams and last_synced_stream != IDS.RESPONSES_SUMMARY:
+        sync_response_summaries(ctx, IDS.RESPONSES_SUMMARY in selected_streams, campaigns)
+        ctx.state['last_synced_stream'] = IDS.RESPONSES_SUMMARY
+        ctx.write_state()
 
     if IDS.SEGMENTS in selected_streams and last_synced_stream != IDS.SEGMENTS:
         sync_segments(ctx, IDS.SEGMENTS in selected_streams)
