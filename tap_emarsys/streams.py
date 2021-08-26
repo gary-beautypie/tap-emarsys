@@ -498,7 +498,7 @@ def sync_selected_streams(ctx):
     #     ctx.write_state()
 
     if IDS.SEGMENTS in selected_streams and last_synced_stream != IDS.SEGMENTS:
-        sync_segments(ctx)
+        sync_segments(ctx, IDS.SEGMENTS in selected_streams)
         ctx.state['last_synced_stream'] = IDS.SEGMENTS
         ctx.write_state()
 
