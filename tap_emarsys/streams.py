@@ -305,6 +305,20 @@ def sync_response_summaries(ctx, sync, campaigns):
     write_bookmark(ctx.state, 'responses_summary', 'last_metric_date', end_date.to_date_string())
     ctx.write_state()
 
+def sync_segments(ctx, sync):
+    data = ctx.client.get(
+        '/filter',
+        endpoint='segments'
+    )
+    stream = ctx.catalog.get_stream('segments')
+    date_fields, integer_fields = get_date_and_integer_fields(stream)
+    data_transformed = list(map(partial(base_transform, date_fields, integer_fields), data))
+    if sync:
+        mdata = metadata.to_map(stream.metadata)
+        data_selected = list(map(partial(select_fields, mdata), data_transformed))
+        write_records('segments', data_selected)
+    return data_transformed
+
 
 @on_exception(constant, MetricsRateLimitException, max_tries=5, interval=60)
 @on_exception(expo, RateLimitException, max_tries=5)
@@ -478,9 +492,14 @@ def sync_selected_streams(ctx):
     #     ctx.state['last_synced_stream'] = IDS.EMAIL_LAUNCHES
     #     ctx.write_state()
 
-    if IDS.RESPONSES_SUMMARY in selected_streams and last_synced_stream != IDS.RESPONSES_SUMMARY:
-        sync_response_summaries(ctx, IDS.RESPONSES_SUMMARY in selected_streams, campaigns)
-        ctx.state['last_synced_stream'] = IDS.RESPONSES_SUMMARY
+    # if IDS.RESPONSES_SUMMARY in selected_streams and last_synced_stream != IDS.RESPONSES_SUMMARY:
+    #     sync_response_summaries(ctx, IDS.RESPONSES_SUMMARY in selected_streams, campaigns)
+    #     ctx.state['last_synced_stream'] = IDS.RESPONSES_SUMMARY
+    #     ctx.write_state()
+
+    if IDS.SEGMENTS in selected_streams and last_synced_stream != IDS.SEGMENTS:
+        sync_segments(ctx)
+        ctx.state['last_synced_stream'] = IDS.SEGMENTS
         ctx.write_state()
 
     ctx.state['last_synced_stream'] = None

@@ -13,6 +13,7 @@ class IDS(object): # pylint: disable=too-few-public-methods
     METRICS = 'metrics'
     EMAIL_LAUNCHES = 'email_launches'
     RESPONSES_SUMMARY = 'responses_summary'
+    SEGMENTS = 'segments'
 
 
 STATIC_SCHEMA_STREAM_IDS = [
@@ -21,7 +22,8 @@ STATIC_SCHEMA_STREAM_IDS = [
     IDS.CONTACT_LIST_MEMBERSHIPS,
     IDS.METRICS,
     IDS.EMAIL_LAUNCHES,
-    IDS.RESPONSES_SUMMARY
+    IDS.RESPONSES_SUMMARY,
+    IDS.SEGMENTS
 ]
 
 PK_FIELDS = {
@@ -31,7 +33,8 @@ PK_FIELDS = {
     IDS.CONTACT_LIST_MEMBERSHIPS: ['contact_list_id', 'contact_id'],
     IDS.METRICS: ['date', 'metric', 'contact_id', 'campaign_id'],
     IDS.EMAIL_LAUNCHES: ['id'],
-    IDS.RESPONSES_SUMMARY: ['start_date', 'end_date', 'campaign_id']
+    IDS.RESPONSES_SUMMARY: ['start_date', 'end_date', 'campaign_id'],
+    IDS.SEGMENTS: ['id']
 }
 
 METRICS_AVAILABLE = [
